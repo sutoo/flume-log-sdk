@@ -80,14 +80,16 @@ func (self *SourceServer) start() {
 	go func() {
 		//批量收集数据
 		pack := make([]*flume.ThriftFlumeEvent, 0, self.batchSize)
+		lastCheckTime := time.Now().Unix()
 		for !self.isStop {
 			event := <-self.buffChannel
 			//如果总数大于batchsize则提交
-			if len(pack) < self.batchSize {
+			if len(pack) < self.batchSize && time.Now().Unix()-lastCheckTime <= 0 {
 				//批量提交
 				pack = append(pack, event)
 				continue
 			}
+			lastCheckTime = time.Now().Unix()
 			sendbuff <- pack[:len(pack)]
 			pack = make([]*flume.ThriftFlumeEvent, 0, self.batchSize)
 		}
